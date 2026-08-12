@@ -81,7 +81,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/*.apk
+        files: dist/*unsigned.apk
         release_name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
         name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
         tag_name: ${{ env.FILE_DATE }}}
