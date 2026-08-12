@@ -63,6 +63,13 @@ jobs:
       id: tag
       run: |
         touch release.txt
+        cat <<EOF > release.txt
+          🚀 Markor - (${{ github.ref_name }})
+          ----------------------
+          Build Date: ${{ env.FILE_DATE }}
+          Repository: ${{ github.ref }}
+          EOF
+
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
