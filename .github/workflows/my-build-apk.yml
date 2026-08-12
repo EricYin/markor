@@ -67,6 +67,50 @@ jobs:
       if: always()
       run: find dist -type f -maxdepth 2
 
+    - name: Generate Temporary Key and Sign APK
+      run: |
+        # 1. generate temp Keystore cert（valid 2000 days）
+        keytool -genkeypair -v \
+          -keystore temp.jks \
+          -alias temp-alias \
+          -keyalg RSA \
+          -keysize 2048 \
+          -validity 2000 \
+          -storepass temp123456 \
+          -keypass temp123456 \
+          -dname "CN=Test, OU=Dev, O=Temporary, L=City, S=State, C=CN"
+
+        # 2. -maxdepth 3 to search *unsigned.apk
+        UNSIGNED_APK=$(find dist -maxdepth 3 -type f -name "*unsigned.apk" | head -n 1)
+
+        # if not found
+        if [ -z "$UNSIGNED_APK" ]; then
+          echo "❌ error： *unsigned.apk not found in dist fold！"
+          exit 1
+        fi
+        echo "unsigned APK: $UNSIGNED_APK"
+
+        # 3. define signed APK path（use same dir，replace -unsigned with -signed）
+        SIGNED_APK="${UNSIGNED_APK/-unsigned/-signed}"
+        # use hard coded apk name
+        # SIGNED_APK="dist/app-release-signed.apk"
+
+        # 4. search Android build-tools dir
+        BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
+        echo "Using Build Tools from: $BUILD_TOOLS_DIR"
+
+        # 5. use apksigner to sign
+        $BUILD_TOOLS_DIR/apksigner sign \
+          --ks temp.jks \
+          --ks-pass pass:temp123456 \
+          --ks-key-alias temp-alias \
+          --key-pass pass:temp123456 \
+          --out "$SIGNED_APK" \
+          "$UNSIGNED_APK"
+
+        echo "signed apk path: $SIGNED_APK"
+        echo "SIGNED_APK_PATH=$SIGNED_APK" >> $GITHUB_ENV
+
     - name: generate release tag
       id: tag
       run: |
@@ -82,7 +126,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        files: dist/*unsigned.apk
+        files: ${{ env.SIGNED_APK_PATH }}
         release_name: ${{ env.UPLOAD_TAG_NAME }}-${{ env.FILE_DATE }}
         name: ${{ env.UPLOAD_TAG_NAME }}-${{ env.FILE_DATE }}
         tag_name: ${{ env.FILE_DATE }}}
