@@ -15,6 +15,7 @@ name: "Build APK"
 
 on: workflow_dispatch
 env:
+  UPLOAD_TAG_NAME=markor
   # REPO_URL: https://github.com/ericyin/markor.git
   # REPO_BRANCH: master 
 
@@ -52,22 +53,26 @@ jobs:
       run: 
         echo "make on branch ${{ github.ref_name }}"
         make clean all
+        echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
 
     - name: "Build: List dist files"
       if: always()
       run: find dist -type f -maxdepth 2
 
-    - name: "Artifacts: All"
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: "all"
-        path: dist
-        retention-days: 5
+    - name: generate release tag
+      id: tag
+      run: |
+        touch release.txt
+        echo "release_tag=${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}" >> $GITHUB_OUTPUT
+        echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: "Artifacts: Android APK"
-      uses: actions/upload-artifact@v4
+    - name: publish to release
+      uses: softprops/action-gh-release@v2.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        name: "android-apk"
-        path: |
-          dist/*.apk
+        files: dist/*.apk
+        release_name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
+        name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        body_path: release.txt
