@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 env:
-  UPLOAD_TAG_NAME=markor
+  UPLOAD_TAG_NAME: markor
   # REPO_URL: https://github.com/ericyin/markor.git
   # REPO_BRANCH: master 
 
