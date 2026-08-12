@@ -70,10 +70,7 @@ jobs:
           ----------------------
           Build Date: ${{ env.FILE_DATE }}
           Repository: ${{ github.ref }}
-          EOF
-
-        echo "release_tag=${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}" >> $GITHUB_OUTPUT
-        echo "status=success" >> $GITHUB_OUTPUT
+          EOF       
 
     - name: publish to release
       uses: softprops/action-gh-release@v2.1.0
@@ -83,5 +80,5 @@ jobs:
         files: dist/*.apk
         release_name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
         name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
-        tag_name: ${{ steps.tag.outputs.release_tag }}
+        tag_name: ${{ env.FILE_DATE }}}
         body_path: release.txt
