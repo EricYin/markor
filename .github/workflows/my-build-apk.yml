@@ -70,11 +70,10 @@ jobs:
       run: |
         touch release.txt
         cat <<EOF > release.txt
-          🚀 Markor - (${{ github.ref_name }})
+          🚀 Markor
           ----------------------
           Build Date: ${{ env.FILE_DATE }}
-          Repository: ${{ github.ref }}
-          EOF       
+          Branch: ${{ github.ref_name }} 
 
     - name: publish to release
       uses: softprops/action-gh-release@v2.1.0
@@ -82,7 +81,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         files: dist/*unsigned.apk
-        release_name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
-        name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
+        release_name: ${{ env.UPLOAD_TAG_NAME }}-${{ env.FILE_DATE }}
+        name: ${{ env.UPLOAD_TAG_NAME }}-${{ env.FILE_DATE }}
         tag_name: ${{ env.FILE_DATE }}}
         body_path: release.txt
