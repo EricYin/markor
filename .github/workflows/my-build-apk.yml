@@ -1,0 +1,87 @@
+##############################################################################################################################
+# # Cleanup:
+#const sleep = ms => () => new Promise((resolve, reject) => window.setTimeout(resolve, ms));
+#Promise.resolve()
+#.then(() => {  document.getElementsByClassName("details-overlay details-reset position-relative d-inline-block ")[3].children[0].click();  })
+#.then(sleep(500))
+#.then(() => {  document.getElementsByClassName("dropdown-item btn-link menu-item-danger")[0].click();  })
+#.then(sleep(1000))
+#.then(() => {  document.getElementsByClassName("btn btn-block btn-danger")[0].click();});
+#
+# while [ 1 ] ; do sleep 4; xdotool key Up; sleep 0.1; xdotool key Return; done
+##############################################################################################################################
+
+name: "Build APK"
+
+on:
+  workflow_dispatch:
+
+env:
+  UPLOAD_TAG_NAME=markor
+  # REPO_URL: https://github.com/ericyin/markor.git
+  # REPO_BRANCH: master 
+
+jobs:
+  build: 
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: "Checkout: Code"
+      uses: actions/checkout@v4
+
+    - name: Checkout
+      uses: actions/checkout@v7
+      # with:
+      #   ref: ${{env.REPO_BRANCH}}
+
+    - name: "Setup: Java"
+      uses: actions/setup-java@v4
+      with:
+        java-version: 21
+        distribution: "temurin"
+
+    - name: "Setup: Install additional dependencies"
+      run: sudo apt-get install -y ispell
+
+    - name: "Cache: Gradle"
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle
+          .gradle
+        key: ${{ runner.os }}-build-${{ github.ref_name }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.*') }}
+
+    - name: "Build: Project with make"
+      run: 
+        echo "make on branch ${{ github.ref_name }}"
+        make clean all
+        echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
+
+    - name: "Build: List dist files"
+      if: always()
+      run: find dist -type f -maxdepth 2
+
+    - name: generate release tag
+      id: tag
+      run: |
+        touch release.txt
+        cat <<EOF > release.txt
+          🚀 Markor - (${{ github.ref_name }})
+          ----------------------
+          Build Date: ${{ env.FILE_DATE }}
+          Repository: ${{ github.ref }}
+          EOF
+
+        echo "release_tag=${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}" >> $GITHUB_OUTPUT
+        echo "status=success" >> $GITHUB_OUTPUT
+
+    - name: publish to release
+      uses: softprops/action-gh-release@v2.1.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: dist/*.apk
+        release_name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
+        name: ${{ env.FILE_DATE }}-${{ env.UPLOAD_TAG_NAME }}
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        body_path: release.txt
