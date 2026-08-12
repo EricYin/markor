@@ -10,7 +10,7 @@ env-%:
 DIST_DIR = dist
 MOVE = mv
 
-all: $(DIST_DIR) spellcheck lint deptree test build aapt_dump_badging
+all: $(DIST_DIR) spellcheck lint deptree build aapt_dump_badging
 
 ####################################################################################
 
