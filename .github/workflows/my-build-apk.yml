@@ -52,11 +52,9 @@ jobs:
         key: ${{ runner.os }}-build-${{ github.ref_name }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.*') }}
 
     - name: "Build: Project with make"
-      run: 
-        echo "make on branch ${{ github.ref_name }}"
-        
-        make clean all
-        
+      run: |
+        echo "make on branch ${{ github.ref_name }}"        
+        make clean all        
         echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
 
     - name: "Build: List dist files"
