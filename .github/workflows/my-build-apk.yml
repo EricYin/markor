@@ -57,7 +57,9 @@ jobs:
 
     - name: "Build: Project with make"
       run: |
-        echo "make on branch ${{ github.ref_name }}"        
+        echo "make on branch ${{ github.ref_name }}" 
+        rm -f Makefile
+        mv Makefile2 Makefile
         make clean all FLAVOR=Default     
         echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
 
