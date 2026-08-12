@@ -58,7 +58,7 @@ jobs:
     - name: "Build: Project with make"
       run: |
         echo "make on branch ${{ github.ref_name }}"        
-        make clean all        
+        make clean all FLAVOR=Default     
         echo "FILE_DATE=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_ENV
 
     - name: "Build: List dist files"
