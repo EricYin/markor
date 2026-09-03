@@ -68,17 +68,22 @@ jobs:
       run: find dist -type f -maxdepth 2
 
     - name: Generate Temporary Key and Sign APK
+      env:
+        KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       run: |
         # 1. generate temp Keystore cert（valid 2000 days）
-        keytool -genkeypair -v \
-          -keystore temp.jks \
-          -alias temp-alias \
-          -keyalg RSA \
-          -keysize 2048 \
-          -validity 2000 \
-          -storepass temp123456 \
-          -keypass temp123456 \
-          -dname "CN=Test, OU=Dev, O=Temporary, L=City, S=State, C=CN"
+        # keytool -genkeypair -v \
+        #   -keystore markor.jks \
+        #   -alias temp1234 \
+        #   -keyalg RSA \
+        #   -keysize 2048 \
+        #   -validity 2000 \
+        #   -storepass temp1234 \
+        #   -keypass temp1234 \
+        #   -dname "CN=CN, OU=OU, O=O, L=L, S=S, C=C"
 
         # 2. -maxdepth 3 to search *unsigned.apk
         UNSIGNED_APK=$(find dist -maxdepth 3 -type f -name "*unsigned.apk" | head -n 1)
@@ -99,17 +104,19 @@ jobs:
         BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
         echo "Using Build Tools from: $BUILD_TOOLS_DIR"
 
-        # 5. use apksigner to sign
+        keystore="$RUNNER_TEMP/release.keystore"
+        trap 'rm -f "$keystore"' EXIT
+        printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
+        apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
         $BUILD_TOOLS_DIR/apksigner sign \
-          --ks temp.jks \
-          --ks-pass pass:temp123456 \
-          --ks-key-alias temp-alias \
-          --key-pass pass:temp123456 \
+          --ks "$keystore" \
+          --ks-key-alias "$KEY_ALIAS" \
+          --ks-pass env:KEYSTORE_PASSWORD \
+          --key-pass env:KEY_PASSWORD \
           --out "$SIGNED_APK" \
           "$UNSIGNED_APK"
-
+        "$apksigner" verify --verbose $SIGNED_APK
         echo "signed apk path: $SIGNED_APK"
-        echo "SIGNED_APK_PATH=$SIGNED_APK" >> $GITHUB_ENV
 
     - name: generate release tag
       id: tag
