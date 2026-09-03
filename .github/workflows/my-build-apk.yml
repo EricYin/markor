@@ -35,6 +35,23 @@ jobs:
       # with:
       #   ref: ${{env.REPO_BRANCH}}
 
+    - name: "Verify Signing Key"
+      env:
+         KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+         KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+         KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+         KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      run: |
+         keystore="$RUNNER_TEMP/release.keystore"
+         trap 'rm -f "$keystore"' EXIT
+         printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"            
+         keytool -certreq \
+                -keystore "$keystore" \
+                -alias "$KEY_ALIAS" \
+                -storepass:env KEYSTORE_PASSWORD \
+                -keypass:env KEY_PASSWORD \
+                -file /dev/null
+                
     - name: "Setup: Java"
       uses: actions/setup-java@v4
       with:
@@ -103,7 +120,6 @@ jobs:
         keystore="$RUNNER_TEMP/release.keystore"
         trap 'rm -f "$keystore"' EXIT
         printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"  
-        keytool -list -v -keystore "$keystore" -alias "$KEY_ALIAS"
              
         "$apksigner" sign \
           --ks "$keystore" \
