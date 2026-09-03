@@ -97,18 +97,17 @@ jobs:
 
         # 3. define signed APK path（use same dir，replace -unsigned with -signed）
         SIGNED_APK="${UNSIGNED_APK/-unsigned/-signed}"
-        # use hard coded apk name
-        # SIGNED_APK="dist/app-release-signed.apk"
 
         # 4. search Android build-tools dir
         BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-        echo "Using Build Tools from: $BUILD_TOOLS_DIR"
+        apksigner="$BUILD_TOOLS_DIR/apksigner"
+        echo "Using Sign Tool: $apksigner"
 
         keystore="$RUNNER_TEMP/release.keystore"
         trap 'rm -f "$keystore"' EXIT
-        printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"
-        apksigner="$ANDROID_SDK_ROOT/build-tools/35.0.0/apksigner"
-        $BUILD_TOOLS_DIR/apksigner sign \
+        printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"  
+             
+        $apksigner sign \
           --ks "$keystore" \
           --ks-key-alias "$KEY_ALIAS" \
           --ks-pass env:KEYSTORE_PASSWORD \
@@ -117,7 +116,8 @@ jobs:
           "$UNSIGNED_APK"
         "$apksigner" verify --verbose $SIGNED_APK
         echo "signed apk path: $SIGNED_APK"
-
+        echo "SIGNED_APK_PATH=$SIGNED_APK" >> $GITHUB_ENV
+        
     - name: generate release tag
       id: tag
       run: |
