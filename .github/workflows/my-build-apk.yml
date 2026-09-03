@@ -106,6 +106,7 @@ jobs:
         keystore="$RUNNER_TEMP/release.keystore"
         trap 'rm -f "$keystore"' EXIT
         printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"  
+        KEY_ALIAS = env.KEY_ALIAS
              
         $apksigner sign \
           --ks "$keystore" \
