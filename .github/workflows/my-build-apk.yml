@@ -30,10 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: "Checkout: Code"
-      uses: actions/checkout@v4
-
-    - name: Checkout
+    - name: "Checkout"
       uses: actions/checkout@v7
       # with:
       #   ref: ${{env.REPO_BRANCH}}
@@ -55,7 +52,7 @@ jobs:
           .gradle
         key: ${{ runner.os }}-build-${{ github.ref_name }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.*') }}
 
-    - name: "Build: Project with make"
+    - name: "Build APK"
       run: |
         echo "make on branch ${{ github.ref_name }}" 
         rm -f Makefile
@@ -67,7 +64,7 @@ jobs:
       if: always()
       run: find dist -type f -maxdepth 2
 
-    - name: Generate Temporary Key and Sign APK
+    - name: "Sign APK"
       env:
         KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -106,9 +103,8 @@ jobs:
         keystore="$RUNNER_TEMP/release.keystore"
         trap 'rm -f "$keystore"' EXIT
         printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$keystore"  
-        KEY_ALIAS = env.KEY_ALIAS
              
-        $apksigner sign \
+        "$apksigner" sign \
           --ks "$keystore" \
           --ks-key-alias "$KEY_ALIAS" \
           --ks-pass env:KEYSTORE_PASSWORD \
@@ -119,7 +115,7 @@ jobs:
         echo "signed apk path: $SIGNED_APK"
         echo "SIGNED_APK_PATH=$SIGNED_APK" >> $GITHUB_ENV
         
-    - name: generate release tag
+    - name: "Generate Release Tag"
       id: tag
       run: |
         touch release.txt
@@ -129,7 +125,7 @@ jobs:
           Build Date: ${{ env.FILE_DATE }}
           Branch: ${{ github.ref_name }} 
 
-    - name: publish to release
+    - name: "Publish to Release"
       uses: softprops/action-gh-release@v2.1.0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
